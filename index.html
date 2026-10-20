@@ -614,7 +614,7 @@ class Rotary {
     for (const [t,sx,sy,k] of L){ x.fillStyle = C[k]; x.textAlign = sx < 0 ? 'right' : 'left'; x.fillText(t, this.cx + sx*0.98*s, this.cy + sy*1.0*s); }
     x.font = `400 ${Math.max(10, s*0.07)}px "JetBrains Mono", monospace`; x.fillStyle = C['--muted'];
     const gi = this.portGeo(Math.PI/2+0.42), ge = this.portGeo(Math.PI/2-0.42), pp = this.plugPts();
-    x.textAlign = 'right'; x.fillText('entra mezcla', gi.out[0]-6, gi.out[1]-s*0.12); x.fillText('sale humo', ge.out[0]-6, ge.out[1]+s*0.12);
+    x.textAlign = 'left'; for (const [t,g,dy] of [['entra mezcla',gi,-0.12],['sale humo',ge,0.12]]){ const tw = x.measureText(t).width; x.fillText(t, Math.max(4, g.out[0]-6-tw), g.out[1]+dy*s); }
     x.textAlign = 'left'; x.fillText('bujías', pp[0].b[0]+s*0.12, this.cy);
   }
   drawPart(name, st){
@@ -635,7 +635,7 @@ class Piston {
   resize(){ const r = this.cv.getBoundingClientRect(); if (!r.width) return; const d = Math.min(window.devicePixelRatio||1,2);
     this.cv.width = Math.round(r.width*d); this.cv.height = Math.round(r.height*d); this.ctx.setTransform(d,0,0,d,0,0); this.w = r.width; this.h = r.height; this.draw(); }
   step(dt){ if (this.playing) this.psi += this.speed*TAU*dt;
-    const idx = Math.floor((this.psi % (2*TAU)) / Math.PI);
+    const idx = Math.floor((((this.psi % (2*TAU)) + 2*TAU) % (2*TAU)) / Math.PI) % 4;
     if (this.prev === 1 && idx === 2){ this.sparks++; this.flash = 1; } this.prev = idx; this.flash = Math.max(0, this.flash - dt*2.5); }
   draw(){
     if (!this.w) return;
@@ -645,7 +645,7 @@ class Piston {
     const head = 0.27*H, wallBot = 0.68*H;
     const pin = [cx + r*Math.sin(psi), crankY - r*Math.cos(psi)];
     const py = crankY - (r*Math.cos(psi) + Math.sqrt(L*L - (r*Math.sin(psi))**2));
-    const chi = psi % (2*TAU), idx = Math.floor(chi/Math.PI), frac = (chi % Math.PI)/Math.PI;
+    const chi = ((psi % (2*TAU)) + 2*TAU) % (2*TAU), idx = Math.floor(chi/Math.PI) % 4, frac = (chi % Math.PI)/Math.PI;
     // bloque
     x.fillStyle = C['--metal']; x.strokeStyle = C['--metal-2']; x.lineWidth = 1.5;
     x.fillRect(cx - bore/2 - 0.06*H, 0.13*H, bore + 0.12*H, wallBot - 0.13*H); x.strokeRect(cx - bore/2 - 0.06*H, 0.13*H, bore + 0.12*H, wallBot - 0.13*H);
@@ -792,7 +792,7 @@ QZ.forEach(([q,opts,ok,why],qi) => { const d = document.createElement('div'); d.
 // ciclo
 let last = performance.now();
 function loop(now){
-  const dt = Math.min(0.05, (now - last)/1000); last = now;
+  const dt = Math.max(0, Math.min(0.05, (now - last)/1000)); last = now;
   for (const e of engines){ if (!e.vis) continue; e.step(dt); e.draw(); }
   for (const p of pistons){ if (!p.vis) continue; p.step(dt); p.draw(); }
   gS.textContent = fmt((main.phi - P0)/TAU); gR.textContent = fmt((main.phi - P0)/(3*TAU)); gK.textContent = main.sparks;
